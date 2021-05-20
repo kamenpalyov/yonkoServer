@@ -1,28 +1,22 @@
-import { Warehouse } from './Warehouse';
-import {
-    Entity,
-    PrimaryKey,
-    Property,
-    ManyToOne,
-    ManyToMany,
-    Collection,
-    OneToMany,
-  } from "@mikro-orm/core";
-  
-  @Entity()
-  export class Stock {
-    @PrimaryKey({ type: "number" })
-    id!: number;
-  
-    @Property({ type: "text" })
-    name!: string;
-    @ManyToOne(()=> Warehouse)
-    warehouse!: Warehouse;
-  
-    @Property({ type: "date" })
-    createdAt = new Date();
-  
-    @Property({ type: "date", onUpdate: () => new Date() })
-    updatedAt = new Date();
-  }
-  
+import { Warehouse } from "./Warehouse";
+import { Entity, PrimaryKey, Property, ManyToOne } from "@mikro-orm/core";
+import { Field, ObjectType } from "type-graphql";
+@ObjectType()
+@Entity()
+export class Stock {
+  @Field()
+  @PrimaryKey({ type: "number" })
+  id!: number;
+  @Field()
+  @Property({ type: "text" })
+  name!: string;
+  @Field(()=>Warehouse)
+  @ManyToOne(() => Warehouse)
+  warehouse!: Warehouse;
+  @Field(() => String)
+  @Property({ type: "date" })
+  createdAt = new Date();
+  @Field(() => String)
+  @Property({ type: "date", onUpdate: () => new Date() })
+  updatedAt = new Date();
+}

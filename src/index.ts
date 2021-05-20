@@ -1,21 +1,31 @@
-import { Warehouse } from './entities/Warehouse';
-import 'reflect-metadata';
+import { StockResolver } from "./resolvers/StockResolver";
+import { MyContext } from "./types";
+import "reflect-metadata";
 import { MikroORM } from "@mikro-orm/core";
-import ormConfig from "./mikro-orm.config"
-import { Stock } from './entities/Stock';
-import express from "express"
-const main = async()=>{
-    const orm = await MikroORM.init(ormConfig)
-    await orm.getMigrator().up();
-    // const createWarehouse = orm.em.create(Stock, {name:"Chinese Container", warehouse:1})
-    // await orm.em.persistAndFlush(createWarehouse)
-    const app = express();
-    app.get("/", async (req, resp)=>{
-        const stock = await orm.em.find(Stock,{})
-        resp.json(stock)
-    })
-    app.listen(4000, ()=>console.log("server is running on port 4000"))
+import ormConfig from "./mikro-orm.config";
+import express from "express";
+import { ApolloServer } from "apollo-server-express";
+import { buildSchema } from "type-graphql";
 
-}
+const main = async () => {
+  // init MikroOrm ORM
+  const orm = await MikroORM.init(ormConfig);
 
-main().catch(err=> console.error(err))
+  //Migrate up to the latest version on every start
+  await orm.getMigrator().up();
+  //Configure the GRAPHQL server
+  const server = new ApolloServer({
+    schema: await buildSchema({
+      resolvers: [StockResolver],
+      validate: false,
+    }),
+    context: ({ req, res }): MyContext => ({ em: orm.em, req, res }),
+  });
+  await server.start();
+  const app = express();
+  server.applyMiddleware({ app });
+  await new Promise(() => app.listen({ port: 4000 }));
+  console.log(`🚀 Server ready at http://localhost:4000${server.graphqlPath}`);
+};
+
+main().catch((err) => console.error(err));
